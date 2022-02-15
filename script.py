@@ -3,12 +3,50 @@ import shutil
 import stat
 import time
 from git import Repo
+import mysql.connector
 
 local_repo_directory_fork = os.path.join(os.getcwd(), 'fork')
 local_repo_directory = os.path.join(os.getcwd(), 'projeto')
 destination = 'main'
 repoOrigin = "git@github.com:pedro-werik/projeto.git"
 repoFork = ["git@github.com:mdn/todo-react.git", "git@github.com:mdn/todo-react.git"]
+
+#BANCO DE DADOS
+def connect_with_db():
+    print("#ABRINDO CONEXAO")
+    config = {
+    'user': 'pedro_werik',
+    'password': 'tcc2022puc',
+    'host': '',
+    'database': 'tccbase',
+    'raise_on_warnings': True
+    }
+
+    cnx = mysql.connector.connect(**config)
+    return cnx
+
+def select_db(cnx):
+    print("PEGANDO REPOSITORIOS")
+    cursor = cnx.cursor()
+    query = ("SELECT NOMEREPOSITORIO FROM REPOSITORIO")
+    cursor.execute(query)
+    result = cursor.fetchall()
+    for x in result:
+        print(x)
+
+    cursor.close()
+    cnx.close()
+
+def insert_into_med(cnx):
+    print("INSERINDO DADOS")
+    cursor = cnx.cursor()
+    query = ("INSERT INTO MEDICAO (speedindex1) VALUES (%s)")
+    values = ("3")
+    cursor.execute(query, values)
+    cnx.commit()
+    print(cursor.rowcount, "record inserted.")
+    cursor.close()
+    cnx.close()
 
 def delete_fork_directory():
     print("Deletando diretorio Fork")
@@ -72,6 +110,8 @@ def push_changes(repo):
     repo.git.push("--set-upstream", 'origin', destination)
 
 def main():
+    connect_with_db()
+    """
     #clonar repositorio
     clone_repo()
     print("----------OK---------")
@@ -109,4 +149,5 @@ def main():
     #push changes
     #push_changes(repo)
     #print("----------OK---------")
+    """
 main()
