@@ -1,9 +1,14 @@
+from asyncio import subprocess
 import os
 import shutil
 import stat
 import time
 from git import Repo
 import mysql.connector
+import js2py
+from temp import *
+import subprocess
+import json
 
 local_repo_directory_fork = os.path.join(os.getcwd(), 'fork')
 local_repo_directory = os.path.join(os.getcwd(), 'projeto')
@@ -17,7 +22,7 @@ def connect_with_db():
     config = {
     'user': 'pedro_werik',
     'password': 'tcc2022puc',
-    'host': '',
+    'host': 'tccbase.cuotubehzepx.us-east-1.rds.amazonaws.com',
     'database': 'tccbase',
     'raise_on_warnings': True
     }
@@ -28,7 +33,7 @@ def connect_with_db():
 def select_db(cnx):
     print("PEGANDO REPOSITORIOS")
     cursor = cnx.cursor()
-    query = ("SELECT NOMEREPOSITORIO FROM REPOSITORIO")
+    query = ("SELECT * FROM TESTESCRIPT")
     cursor.execute(query)
     result = cursor.fetchall()
     for x in result:
@@ -40,8 +45,8 @@ def select_db(cnx):
 def insert_into_med(cnx):
     print("INSERINDO DADOS")
     cursor = cnx.cursor()
-    query = ("INSERT INTO MEDICAO (speedindex1) VALUES (%s)")
-    values = ("3")
+    query = ("INSERT INTO TESTESCRIPT (firstname, lastname, email) VALUES (%s, %s, %s)")
+    values = ("Werik", "Paula", "ww@gmail")
     cursor.execute(query, values)
     cnx.commit()
     print(cursor.rowcount, "record inserted.")
@@ -88,7 +93,7 @@ def clone_repo():
             local_repo_directory, branch=destination) #ssh link git, local destino, branch
 
 def clone_repo_fork(repo, dest):
-    print("Diretorio não existe, Clonando repo")    
+    print("Diretorio não existe, Clonando repo fork")    
     Repo.clone_from(repo, 
         local_repo_directory_fork, branch=dest) 
 
@@ -109,8 +114,30 @@ def push_changes(repo):
     print("push changes")
     repo.git.push("--set-upstream", 'origin', destination)
 
+def call_lighthouse():
+    print("Roda Lighthouse")
+    subprocess.run(["node", "lh.js"])
+
+def read_report_lighthouse():
+    file = open('lhreport.json')
+    data = json.load(file)
+    speed_index_data = data["audits"]["speed-index"]
+    #speed_index_numeric = data["audits"]["speed-index"]["numericValue"]
+    speed_index_seconds = speed_index_data["displayValue"]
+    file.close()
+    return speed_index_seconds
+
 def main():
-    connect_with_db()
+    
+    speed_index = read_report_lighthouse()
+    print(speed_index)
+    
+    #LIGHTHOUSE
+    #call_lighthouse()
+
+    #DB
+    #connect_with_db()
+
     """
     #clonar repositorio
     clone_repo()
