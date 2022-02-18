@@ -10,15 +10,15 @@ from temp import *
 import subprocess
 import json
 
-local_repo_directory_fork = os.path.join(os.getcwd(), 'fork')
-local_repo_directory = os.path.join(os.getcwd(), 'projeto')
+local_repo_directory_fork = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'fork')
+local_repo_directory = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'projeto')
 destination = 'main'
 repoOrigin = "git@github.com:pedro-werik/projeto.git"
 repoFork = ["git@github.com:mdn/todo-react.git", "git@github.com:mdn/todo-react.git"]
 
 #BANCO DE DADOS
 def connect_with_db():
-    print("#ABRINDO CONEXAO")
+    print("--------- OPEN CONNECTION ---------")
     config = {
     'user': 'pedro_werik',
     'password': 'tcc2022puc',
@@ -42,14 +42,16 @@ def select_db(cnx):
     cursor.close()
     cnx.close()
 
-def insert_into_med(cnx):
-    print("INSERINDO DADOS")
+def insert_into_med(cnx, value):
+    print("--------- INSERT DATA ---------")
+
     cursor = cnx.cursor()
-    query = ("INSERT INTO TESTESCRIPT (firstname, lastname, email) VALUES (%s, %s, %s)")
-    values = ("Werik", "Paula", "ww@gmail")
-    cursor.execute(query, values)
+    query = """INSERT INTO TESTESCRIPT (firstname, lastname, email) VALUES (%s, %s, %s)"""
+
+    cursor.execute(query, (value[0], value[1], value[2]))
     cnx.commit()
     print(cursor.rowcount, "record inserted.")
+    
     cursor.close()
     cnx.close()
 
@@ -63,6 +65,7 @@ def delete_fork_directory():
     shutil.rmtree(local_repo_directory_fork)
 
 def copy_files_fork_to_projeto():
+    print("------- COPY FILES -------")
     for file in os.listdir(local_repo_directory_fork):
         if file != '.git':
             shutil.move(local_repo_directory_fork + '/' + file, local_repo_directory)
@@ -82,20 +85,24 @@ def remove_files_projeto():
         print('nao existe a pasta')   
 
 def clone_repo():
-    #if os.path.exists(local_repo_directory):
+    if os.path.exists(local_repo_directory):
+        print("Dir Existe")
      #   print("Diretorio existe, Pulling mudanças da main branch")
       #  repo = Repo(local_repo_directory)
        # origin = repo.remotes.origin
        # origin.pull(destination)
-    #else:
+    else:
         print("Diretorio não existe, Clonando repo")    
         Repo.clone_from(repoOrigin, 
             local_repo_directory, branch=destination) #ssh link git, local destino, branch
 
 def clone_repo_fork(repo, dest):
-    print("Diretorio não existe, Clonando repo fork")    
-    Repo.clone_from(repo, 
-        local_repo_directory_fork, branch=dest) 
+    if os.path.exists(local_repo_directory_fork):
+        print("DirFork Existe")
+    else:
+        print("Diretorio não existe, Clonando repo fork")    
+        Repo.clone_from(repo, 
+            local_repo_directory_fork, branch=dest) 
 
 def chdirectory(path):
     os.chdir(path)
@@ -115,38 +122,38 @@ def push_changes(repo):
     repo.git.push("--set-upstream", 'origin', destination)
 
 def call_lighthouse():
-    print("Roda Lighthouse")
+    print("------------ RUN LIGHTHOUSE ------------")
     subprocess.run(["node", "lh.js"])
 
+    time.sleep(5)
+
+    res = read_report_lighthouse()
+    return res
+
 def read_report_lighthouse():
+    print("------------ GET SPEED-INDEX ------------")
     file = open('lhreport.json')
     data = json.load(file)
-    speed_index_data = data["audits"]["speed-index"]
-    #speed_index_numeric = data["audits"]["speed-index"]["numericValue"]
-    speed_index_seconds = speed_index_data["displayValue"]
-    file.close()
-    return speed_index_seconds
+
+    if data["audits"]["speed-index"]["score"] == None:
+        file.close()
+        return None
+    else:
+        speed_index_data = data["audits"]["speed-index"]
+        speed_index_seconds = speed_index_data["displayValue"]
+        speed_index_seconds = speed_index_seconds.replace("Â", "")
+        file.close()
+        return speed_index_seconds
+    
 
 def main():
-    
-    speed_index = read_report_lighthouse()
-    print(speed_index)
-    
-    #LIGHTHOUSE
-    #call_lighthouse()
-
-    #DB
-    #connect_with_db()
-
-    """
     #clonar repositorio
     clone_repo()
     print("----------OK---------")
-
+    
     #Remove arquivos
     remove_files_projeto()
     print("----------OK---------")
-    
 
     for r in repoFork:
         dest = 'master' #temporario
@@ -159,6 +166,36 @@ def main():
         copy_files_fork_to_projeto()
         print("----------OK---------")
 
+        time.sleep(5)
+        
+        repo = Repo(local_repo_directory)
+        #add and commit changes
+        add_commit_changes(repo)
+        print("----------OK---------")
+
+        time.sleep(5)
+
+        #push changes
+        push_changes(repo)
+        print("----------OK---------")
+
+        time.sleep(20)
+
+        speed_index = []
+        for i in range(3):
+            res = call_lighthouse()
+            while res == None:
+                print("--------- REPETINDO LIGHTHOUSE: ERRO NO LINK ---------")
+                time.sleep(10)
+                res = call_lighthouse()
+            
+            speed_index.append(res)
+            print("----------OK---------")
+        
+        cnx = connect_with_db()
+        insert_into_med(cnx, speed_index)
+        print("----- OK -----")
+
         #deleta diretorio fork
         delete_fork_directory()
         print("----------OK---------")
@@ -166,15 +203,4 @@ def main():
         #Remove arquivos
         remove_files_projeto()
         print("----------OK---------")
-        
-    #repo = Repo(local_repo_directory)
-    
-    #add and commit changes
-    #add_commit_changes(repo)
-    #print("----------OK---------")
-
-    #push changes
-    #push_changes(repo)
-    #print("----------OK---------")
-    """
 main()

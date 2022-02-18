@@ -5,7 +5,7 @@ const chromeLauncher = require('chrome-launcher');
 async function j () {
   const chrome = await chromeLauncher.launch({chromeFlags: ['--headless']});
   const options = {logLevel: 'info', output: 'json', onlyCategories: ['performance'], port: chrome.port};
-  const runnerResult = await lighthouse('https://example.com', options);
+  const runnerResult = await lighthouse('https://tcc-projetos.herokuapp.com/', options);
 
   // `.report` is the HTML report as a string
   const reportHtml = runnerResult.report;
