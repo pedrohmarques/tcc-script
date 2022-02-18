@@ -11,10 +11,10 @@ import subprocess
 import json
 
 local_repo_directory_fork = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'fork')
-local_repo_directory = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'projeto')
+local_repo_directory = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'projetos')
 destination = 'main'
 repoOrigin = "git@github.com:pedro-werik/projeto.git"
-repoFork = ["git@github.com:mdn/todo-react.git", "git@github.com:mdn/todo-react.git"]
+repoFork = ["git@github.com:mdn/todo-react.git"]
 
 #BANCO DE DADOS
 def connect_with_db():
@@ -99,6 +99,10 @@ def clone_repo():
 def clone_repo_fork(repo, dest):
     if os.path.exists(local_repo_directory_fork):
         print("DirFork Existe")
+        delete_fork_directory()
+        print("Diretorio não existe, Clonando repo fork") 
+        Repo.clone_from(repo, 
+            local_repo_directory_fork, branch=dest)
     else:
         print("Diretorio não existe, Clonando repo fork")    
         Repo.clone_from(repo, 
@@ -106,6 +110,9 @@ def clone_repo_fork(repo, dest):
 
 def chdirectory(path):
     os.chdir(path)
+
+def chdirectory_lighthouse():
+    os.chdir("C:\\Users\\pedri\\Documents\\tcc\\tcc-script\\lighthouse\\src")
 
 def update_file():
     chdirectory(local_repo_directory)
@@ -115,17 +122,17 @@ def update_file():
 def add_commit_changes(repo):
     print("Comitando mudancas")
     repo.git.add('--all')
-    repo.git.commit("-m", "Teste Script 2")
+    repo.git.commit("-m", "Teste Final React")
 
 def push_changes(repo):
     print("push changes")
-    repo.git.push("--set-upstream", 'origin', destination)
+    repo.git.push('origin', "master")
 
 def call_lighthouse():
     print("------------ RUN LIGHTHOUSE ------------")
     subprocess.run(["node", "lh.js"])
 
-    time.sleep(5)
+    time.sleep(2)
 
     res = read_report_lighthouse()
     return res
@@ -147,9 +154,6 @@ def read_report_lighthouse():
     
 
 def main():
-    #clonar repositorio
-    clone_repo()
-    print("----------OK---------")
     
     #Remove arquivos
     remove_files_projeto()
@@ -166,20 +170,21 @@ def main():
         copy_files_fork_to_projeto()
         print("----------OK---------")
 
-        time.sleep(5)
-        
         repo = Repo(local_repo_directory)
         #add and commit changes
         add_commit_changes(repo)
         print("----------OK---------")
 
-        time.sleep(5)
+        time.sleep(2)
 
         #push changes
         push_changes(repo)
         print("----------OK---------")
 
-        time.sleep(20)
+        chdirectory_lighthouse()
+        print(os.getcwd())
+        
+        time.sleep(10)
 
         speed_index = []
         for i in range(3):
@@ -190,8 +195,9 @@ def main():
                 res = call_lighthouse()
             
             speed_index.append(res)
-            print("----------OK---------")
         
+        print("----------OK---------")
+
         cnx = connect_with_db()
         insert_into_med(cnx, speed_index)
         print("----- OK -----")
@@ -203,4 +209,5 @@ def main():
         #Remove arquivos
         remove_files_projeto()
         print("----------OK---------")
+
 main()
