@@ -14,7 +14,25 @@ local_repo_directory_fork = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'fo
 local_repo_directory = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'projetos')
 destination = 'main'
 repoOrigin = "git@github.com:pedro-werik/projeto.git"
-repoFork = ["git@github.com:mdn/todo-react.git"]
+
+'''repoFork = [
+"git@github.com:mdn/todo-react.git",
+"git@github.com:kabirbaidhya/react-todo-app.git",
+"git@github.com:bradtraversy/react_crash_todo.git",
+"git@github.com:jaysoo/todomvc-redux-react-typescript.git",
+"git@github.com:therj/react-todo.git",
+"git@github.com:f/react-hooks-todo-app.git",
+"git@github.com:samgamage/todo-react.git",
+"git@github.com:emiliocardenas/learning-react-website.git",
+"git@github.com:GutoFrr/todo-list-tsx.git",
+"git@github.com:DaryaZibirova/TodoList_React.git",
+"git@github.com:MichiyoYo/react-todo-list-with-hooks.git",
+"git@github.com:matiassalicru/todo-list-simple-react.git",
+"git@github.com:shashankbansal023/Todo-List-using-react.git",
+"git@github.com:guryanov-junior/TODO-list.git"]'''
+repoFork = []
+
+
 
 #BANCO DE DADOS
 def connect_with_db():
@@ -33,22 +51,23 @@ def connect_with_db():
 def select_db(cnx):
     print("PEGANDO REPOSITORIOS")
     cursor = cnx.cursor()
-    query = ("SELECT * FROM TESTESCRIPT")
+    query = ("SELECT * FROM REPOSITORIO")
     cursor.execute(query)
     result = cursor.fetchall()
+    
     for x in result:
-        print(x)
-
+        repoFork.append({'ssh': x[1], 'id': x[0], 'tipo': x[3]})
+    
     cursor.close()
     cnx.close()
 
-def insert_into_med(cnx, value):
+def insert_into_med(cnx, value, id):
     print("--------- INSERT DATA ---------")
 
     cursor = cnx.cursor()
-    query = """INSERT INTO TESTESCRIPT (firstname, lastname, email) VALUES (%s, %s, %s)"""
+    query = """INSERT INTO MEDICAO (IDREPOSITORIO, SPEEDINDEX1, SPEEDINDEX2, SPEEDINDEX3) VALUES (%s, %s, %s, %s)"""
 
-    cursor.execute(query, (value[0], value[1], value[2]))
+    cursor.execute(query, (id, value[0], value[1], value[2]))
     cnx.commit()
     print(cursor.rowcount, "record inserted.")
     
@@ -82,7 +101,19 @@ def remove_files_projeto():
                 except OSError:
                     os.remove(path)
     else:
-        print('nao existe a pasta')   
+        print('nao existe a pasta')
+
+def remove_yarn():
+    if os.path.isdir(local_repo_directory):
+        print("Removendo yarn")
+        chdirectory(local_repo_directory)
+        for file in os.listdir(local_repo_directory):
+            path = os.path.join(local_repo_directory, file)
+            if file == 'yarn.lock':
+                try:
+                    shutil.rmtree(path)
+                except OSError:
+                    os.remove(path)
 
 def clone_repo():
     if os.path.exists(local_repo_directory):
@@ -122,7 +153,7 @@ def update_file():
 def add_commit_changes(repo):
     print("Comitando mudancas")
     repo.git.add('--all')
-    repo.git.commit("-m", "Teste Final React")
+    repo.git.commit("-m", "Teste Repositorios")
 
 def push_changes(repo):
     print("push changes")
@@ -139,9 +170,9 @@ def call_lighthouse():
 
 def read_report_lighthouse():
     print("------------ GET SPEED-INDEX ------------")
-    file = open('lhreport.json')
+    file = open('lhreport.json', encoding="utf8")
     data = json.load(file)
-
+    
     if data["audits"]["speed-index"]["score"] == None:
         file.close()
         return None
@@ -154,17 +185,23 @@ def read_report_lighthouse():
     
 
 def main():
-    
+    cnx = connect_with_db()
+    select_db(cnx)
+
     #Remove arquivos
     remove_files_projeto()
     print("----------OK---------")
 
     for r in repoFork:
-        dest = 'master' #temporario
-
-        #clonar repositorio
-        clone_repo_fork(r, dest)
-        print("----------OK---------")
+        try:
+            #clonar repositorio
+            clone_repo_fork(r['ssh'], 'master')
+            print("----------OK---------")
+        except:
+            time.sleep(5)
+            #clonar repositorio
+            clone_repo_fork(r['ssh'], 'main')
+            print("----------OK---------")
 
         #move os arquivos para o projeto
         copy_files_fork_to_projeto()
@@ -184,22 +221,17 @@ def main():
         chdirectory_lighthouse()
         print(os.getcwd())
         
-        time.sleep(10)
+        time.sleep(5)
 
         speed_index = []
         for i in range(3):
             res = call_lighthouse()
-            while res == None:
-                print("--------- REPETINDO LIGHTHOUSE: ERRO NO LINK ---------")
-                time.sleep(10)
-                res = call_lighthouse()
-            
             speed_index.append(res)
         
         print("----------OK---------")
 
         cnx = connect_with_db()
-        insert_into_med(cnx, speed_index)
+        insert_into_med(cnx, speed_index, r['id'])
         print("----- OK -----")
 
         #deleta diretorio fork
