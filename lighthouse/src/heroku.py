@@ -12,25 +12,27 @@ import json
 
 local_repo_directory_fork = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'fork')
 local_repo_directory = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'projetos')
+local_repo_directory_vue = os.path.join("C:\\Users\\pedri\\Documents\\tcc", 'vue')
 destination = 'main'
 repoOrigin = "git@github.com:pedro-werik/projeto.git"
 
-'''repoFork = [
-"git@github.com:mdn/todo-react.git",
-"git@github.com:kabirbaidhya/react-todo-app.git",
-"git@github.com:bradtraversy/react_crash_todo.git",
-"git@github.com:jaysoo/todomvc-redux-react-typescript.git",
-"git@github.com:therj/react-todo.git",
-"git@github.com:f/react-hooks-todo-app.git",
-"git@github.com:samgamage/todo-react.git",
-"git@github.com:emiliocardenas/learning-react-website.git",
-"git@github.com:GutoFrr/todo-list-tsx.git",
-"git@github.com:DaryaZibirova/TodoList_React.git",
-"git@github.com:MichiyoYo/react-todo-list-with-hooks.git",
-"git@github.com:matiassalicru/todo-list-simple-react.git",
-"git@github.com:shashankbansal023/Todo-List-using-react.git",
-"git@github.com:guryanov-junior/TODO-list.git"]'''
-repoFork = []
+repoFork = [
+    "git@github.com:mdn/todo-react.git",
+    "git@github.com:kabirbaidhya/react-todo-app.git",
+    "git@github.com:bradtraversy/react_crash_todo.git",
+    "git@github.com:jaysoo/todomvc-redux-react-typescript.git",
+    "git@github.com:therj/react-todo.git",
+    "git@github.com:f/react-hooks-todo-app.git",
+    "git@github.com:samgamage/todo-react.git",
+    "git@github.com:emiliocardenas/learning-react-website.git",
+    "git@github.com:GutoFrr/todo-list-tsx.git",
+    "git@github.com:DaryaZibirova/TodoList_React.git",
+    "git@github.com:MichiyoYo/react-todo-list-with-hooks.git",
+    "git@github.com:matiassalicru/todo-list-simple-react.git",
+    "git@github.com:shashankbansal023/Todo-List-using-react.git",
+    "git@github.com:guryanov-junior/TODO-list.git"
+]
+#repoFork = []
 
 
 
@@ -83,18 +85,25 @@ def delete_fork_directory():
             os.chmod(os.path.join(root, file), stat.S_IRWXU)
     shutil.rmtree(local_repo_directory_fork)
 
-def copy_files_fork_to_projeto():
+def copy_files_fork_to_projeto(type):
     print("------- COPY FILES -------")
     for file in os.listdir(local_repo_directory_fork):
         if file != '.git':
-            shutil.move(local_repo_directory_fork + '/' + file, local_repo_directory)
+            if(type == "REACT"):
+                shutil.move(local_repo_directory_fork + '/' + file, local_repo_directory)
+            else:
+                shutil.move(local_repo_directory_fork + '/' + file, local_repo_directory_vue)
 
-def remove_files_projeto():
-    if os.path.isdir(local_repo_directory):
+def remove_files_projeto(type):
+    if(type == "REACT"):
+        local = local_repo_directory
+    else:
+        local = local_repo_directory_vue
+    if os.path.isdir(local):
         print("Removendo arquivos anteriores")
-        chdirectory(local_repo_directory)
-        for file in os.listdir(local_repo_directory):
-            path = os.path.join(local_repo_directory, file)
+        chdirectory(local)
+        for file in os.listdir(local):
+            path = os.path.join(local, file)
             if file != '.git':
                 try:
                     shutil.rmtree(path)
@@ -185,12 +194,17 @@ def read_report_lighthouse():
     
 
 def main():
-    cnx = connect_with_db()
-    select_db(cnx)
+    res = call_lighthouse()
+    print(res)
+    '''
+    #cnx = connect_with_db()
+    #select_db(cnx)
+    type = "VUE"
 
     #Remove arquivos
-    remove_files_projeto()
+    remove_files_projeto(type)
     print("----------OK---------")
+    
 
     for r in repoFork:
         try:
@@ -204,10 +218,15 @@ def main():
             print("----------OK---------")
 
         #move os arquivos para o projeto
-        copy_files_fork_to_projeto()
+        copy_files_fork_to_projeto(type)
         print("----------OK---------")
+        
+        if(type == "REACT"):
+            local = local_repo_directory
+        else:
+            local = local_repo_directory_vue
 
-        repo = Repo(local_repo_directory)
+        repo = Repo(local)
         #add and commit changes
         add_commit_changes(repo)
         print("----------OK---------")
@@ -239,7 +258,7 @@ def main():
         print("----------OK---------")
 
         #Remove arquivos
-        remove_files_projeto()
+        remove_files_projeto(type)
         print("----------OK---------")
-
+'''
 main()
